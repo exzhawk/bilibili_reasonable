@@ -12,26 +12,8 @@ class MainHook : IXposedHookLoadPackage {
     private val packageName = "tv.danmaku.bili"
     override fun handleLoadPackage(lpparam: XC_LoadPackage.LoadPackageParam) {
         if (packageName == lpparam.packageName) {
-            hookDynamicHotTopic(lpparam)
             hookDynamic(lpparam)
         }
-    }
-
-    private fun hookDynamicHotTopic(lpparam: XC_LoadPackage.LoadPackageParam) {
-        val hookClass =
-            lpparam.classLoader.loadClass("com.bapis.bilibili.app.dynamic.v2.DynamicMoss") ?: return
-        Log.i(TAG, "hook Dynamic")
-        XposedHelpers.findAndHookMethod(
-            hookClass,
-            "dynAll",
-            "com.bapis.bilibili.app.dynamic.v2.DynAllReq",
-            object : XC_MethodHook() {
-                override fun afterHookedMethod(param: MethodHookParam) {
-                    Log.i(TAG, param.toString())
-                    XposedHelpers.callMethod(param.result, "clearTopicList")
-                }
-            }
-        )
     }
 
     private fun hookDynamic(lpparam: XC_LoadPackage.LoadPackageParam) {
@@ -45,7 +27,7 @@ class MainHook : IXposedHookLoadPackage {
             "com.bilibili.lib.moss.api.MossResponseHandler",
             object : XC_MethodHook() {
                 override fun beforeHookedMethod(param: MethodHookParam) {
-                    Log.i(TAG, "clean ")
+                    Log.i(TAG, "clean moss response")
                     val mossResponseHandler = param.args[1]
                     val mossResponseHandlerInterface = Class.forName(
                         "com.bilibili.lib.moss.api.MossResponseHandler",
@@ -70,14 +52,6 @@ class MainHook : IXposedHookLoadPackage {
                             val idxList = mutableSetOf<Int>()
                             for ((idx, e) in contentList.withIndex()) {
                                 Log.i(TAG, "iter content")
-                                val methods = e?.javaClass?.declaredMethods
-                                if (methods != null) {
-                                    for (method in methods) {
-                                        if (method.toString().endsWith("getModulesList()")) {
-                                            Log.i(TAG, method.toString())
-                                        }
-                                    }
-                                }
                                 try {
                                     Log.i(TAG, "calling getModulesList")
                                     val moduleList =
